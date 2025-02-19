@@ -3,6 +3,7 @@
 set -e
 clear
 
+# Display Logo
 curl -sL https://raw.githubusercontent.com/zidanaetrna/unichain/refs/heads/main/button_logo_script.sh | bash
 
 echo "Starting Nexus Node CLI installation..."
@@ -22,8 +23,8 @@ else
     echo "✅ Rust installed successfully."
 fi
 
-# Install Nexus CLI if not installed
-if [ -d "$HOME/.nexus/network-api/clients/cli" ]; then
+# Check if Nexus CLI is installed
+if command_exists nexus; then
     echo "✅ Nexus CLI is already installed, skipping installation."
 else
     echo "Installing Nexus CLI..."
@@ -31,26 +32,26 @@ else
     echo "✅ Nexus CLI installed successfully."
 fi
 
-# Detect VPS username
-USER_NAME=$(whoami)
-NEXUS_CLI_PATH="/home/$USER_NAME/.nexus/network-api/clients/cli"
+# Detect Nexus CLI installation path
+NEXUS_CLI_PATH=$(find /home -type d -path "*/.nexus/network-api/clients/cli" 2>/dev/null | head -n 1)
+
+if [ -z "$NEXUS_CLI_PATH" ]; then
+    echo "❌ Error: Nexus CLI directory not found."
+    exit 1
+else
+    echo "✅ Nexus CLI directory found at: $NEXUS_CLI_PATH"
+fi
 
 # Navigate to Nexus CLI directory
-if [ -d "$NEXUS_CLI_PATH" ]; then
-    echo "Entering Nexus CLI directory..."
-    cd "$NEXUS_CLI_PATH"
-else
-    echo "❌ Error: Nexus CLI directory not found at $NEXUS_CLI_PATH."
-    exit 1
-fi
+cd "$NEXUS_CLI_PATH"
 
 # Build Nexus CLI using Cargo
 echo "Building Nexus CLI..."
 cargo build --release
 
-# Check if "optional" issue exists
+# Fix "optional" issue if found
 PROTO_FILE="$NEXUS_CLI_PATH/proto/orchestrator.proto"
-if grep -q "optional" "$PROTO_FILE"; then
+if [ -f "$PROTO_FILE" ] && grep -q "optional" "$PROTO_FILE"; then
     echo "Fixing 'optional' issue in orchestrator.proto..."
     sed -i '/optional/d' "$PROTO_FILE"
     echo "✅ 'optional' issue fixed."
@@ -58,9 +59,9 @@ else
     echo "✅ No 'optional' issue detected."
 fi
 
-# Fix "some" issue
+# Fix "some" issue if found
 ORCHESTRATOR_CLIENT_FILE="$NEXUS_CLI_PATH/src/orchestrator_client.rs"
-if grep -q "some" "$ORCHESTRATOR_CLIENT_FILE"; then
+if [ -f "$ORCHESTRATOR_CLIENT_FILE" ] && grep -q "some" "$ORCHESTRATOR_CLIENT_FILE"; then
     echo "Fixing 'some' issue in orchestrator_client.rs..."
     sed -i '/node_telemetry:/,/})/c\
     node_telemetry: Some(crate::nexus_orchestrator::NodeTelemetry {\
