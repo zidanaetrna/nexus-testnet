@@ -117,9 +117,5 @@ After starting the node, check your node details at:
 
 ### 🎯 Need Help?
 
-If you encounter any issues, feel free to ask in the Nexus community or check the logs for errors:
-
-```bash
-tail -f ~/.nexus/logs/nexus.log
-```
+If you encounter any issues, feel free to ask in the Nexus community or email me on tumbaldiscord292@gmail.com
 
